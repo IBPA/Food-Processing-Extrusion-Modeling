@@ -2,16 +2,26 @@
 
 **A computational framework connecting formulation, processing, nutrient density, and antioxidant capacity: a cereal extrusion study**
 
-Pranav Gupta¹², Keer Ni¹², Xu Zhou¹², & Ilias Tagkopoulos¹²
+Keer Ni¹²†, Xu Zhou¹²†, Pranav Gupta¹², & Ilias Tagkopoulos¹²
 
-¹Department of Computer Science & Genome Center, University of California, Davis  
+†These authors contributed equally to this work
+
+¹Department of Computer Science & Genome Center, University of California, Davis
 ²USDA/NSF AI Institute for Next Generation Food Systems (AIFS)
 
 ---
 
 ## Overview
 
-This repository provides the computational framework described in the paper. The pipeline integrates mechanistic kinetic models of thermal processing with supervised machine learning to predict formulation-level antioxidant capacity, and uses global optimization to identify extrusion conditions that maximize both nutrient density and antioxidant activity.
+This repository provides the full computational framework described in the paper, including the data collection pipelines, mechanistic kinetic model, machine learning predictor, and extrusion condition optimizer.
+
+The framework addresses three components:
+
+1. **Data collection** — Two LLM-assisted automated pipelines collected (i) 12 nutritional values per ingredient from commercial supplier PDFs via an n8n workflow, and (ii) bioactive compound concentrations for 28 ingredients from ~2,000 peer-reviewed papers using a structured ChatGPT extraction protocol.
+
+2. **Bioactivity Prediction Model (BPM)** — A Random Forest regressor trained on processing-adjusted chemical compositions to predict formulation-level antioxidant capacity (FRAP). Evaluated across 100 repeated 80/20 train–test splits; R² = 0.75, PCC = 0.87.
+
+3. **Extrusion Condition Optimizer** — Differential Evolution and Dual Annealing search the (temperature, residence time) space to maximize a weighted combination of NRF9.3 and predicted FRAP, improving the combined score by a mean of 31% relative to unprocessed formulations.
 
 ---
 
@@ -40,13 +50,43 @@ The BFL dataset links food chemical profiles to in vitro antioxidant measurement
 
 ---
 
+## Data Collection Pipeline
+
+Two parallel LLM-assisted extraction workflows were used to build the ingredient database.
+
+### 1. Nutrient data (supplier PDFs → NRF9.3 inputs)
+
+Nutritional composition data for 28 ingredients were collected from TraceGains ([tracegains.com](https://tracegains.com/)) supplier specification PDFs using an automated n8n workflow. For each PDF:
+
+1. A schedule trigger (every 2 min) detected new PDFs in a designated Google Drive input folder.
+2. Mistral AI extracted raw text from the PDF.
+3. GPT-5.1 extracted 13 nutritional values and 7 product metadata fields using a structured schema and a nutrition-aware system prompt.
+4. Extracted records were written to a Google Sheet; processed files were archived and renamed as `{ingredient_category} - {product_id}`.
+
+The full importable n8n workflow is provided in `data-pipeline/n8n/`. Credential IDs and private Google Drive/Sheets IDs have been replaced with `YOUR_*` placeholders — substitute your own values before importing. The exact extraction schema and system prompt are documented in `data-pipeline/prompts/nutrient_extraction_prompts.md`.
+
+### 2. Bioactive compound data (literature PDFs → antioxidant model inputs)
+
+Phenolic acid and flavonoid concentrations were compiled from ~2,000 peer-reviewed papers identified through structured Google Scholar searches. Each paper was processed by uploading its PDF to a dedicated ChatGPT Project (GPT-5.2) with a table-by-table extraction protocol:
+
+1. The model assessed each table for relevance (does it contain bioactive compound concentrations for a target ingredient?).
+2. Relevant tables were extracted into flat JSON records preserving exact values, units, and abbreviation resolutions.
+3. Extraction was constrained to the 28 target ingredients using a companion `ingredients.txt` scope file.
+4. Total measurements (TPC, TFC) were included; nutrients and assay endpoints (FRAP, DPPH) were excluded.
+
+The exact system prompt and per-paper user prompt are documented in `data-pipeline/prompts/bioactive_extraction_prompts.md`.
+
+**Extraction quality:** A random 10% sample of source PDFs (~200 records) was manually audited. All audited records meeting completeness criteria achieved 100% agreement across extracted values. 17.4% of records were removed during review due to incomplete coverage (≥60% missing required fields), yielding a curated database of 503 records.
+
+---
+
 ## Models
 
 ### 1. Bioactivity Prediction Model (BPM)
 
 **Algorithm:** Random Forest Regressor (scikit-learn)
 
-**Why Random Forest?** Selected for its ability to capture nonlinear relationships and interactions among compositional features without parametric assumptions, robustness to small sample sizes, tolerance of correlated features, and interpretable feature importance rankings. Evaluated against 9 alternative algorithms (Gradient Boosting, AdaBoost, XGBoost, SVR, LightGBM, ElasticNet, Lasso, Ridge, MLP); Random Forest achieved the highest normalized score across all six evaluation metrics.
+**Why Random Forest?** Selected for its ability to capture nonlinear relationships among compositional features without parametric assumptions, robustness to small sample sizes, and interpretable feature importance rankings. Evaluated against 9 alternative algorithms (Gradient Boosting, AdaBoost, XGBoost, SVR, LightGBM, ElasticNet, Lasso, Ridge, MLP); Random Forest achieved the highest normalized score across all six evaluation metrics.
 
 **Input features:** Processing-adjusted chemical concentrations per formulation (post-extrusion, aggregated across all ingredients)
 
@@ -84,36 +124,26 @@ The BFL dataset links food chemical profiles to in vitro antioxidant measurement
 | R² | 0.75 |
 | PCC | 0.87 |
 
-**Feature importance:** Mean decrease in impurity (Gini importance) averaged across all trees. Features with consistently low importance across bootstrap runs are excluded in a single refinement pass.
+### Expected input data for BPM
 
-### Expected input data for Bioactivity model inputs
+#### 1. Composition matrix CSV
 
-#### 1. Concentration matrix CSV
-A CSV with:
-
-- one row per `sample_id`
-- one column named `sample_id`
-- remaining columns = processing-adjusted chemical concentration features
-
-Example:
+A CSV with one row per `sample_id` (format: `FormulationName(Temperature,ResidenceTime)`) and one column per processing-adjusted chemical concentration feature.
 
 | sample_id | ferulic_acid | catechin | vanillic_acid |
 |---|---:|---:|---:|
 | FormulationA(140,30) | 0.12 | 0.05 | 0.03 |
 | FormulationA(160,45) | 0.10 | 0.04 | 0.02 |
 
-#### 2. Target CSV
-A CSV with:
+#### 2. FRAP target CSV
 
-- one column named `sample_id`
-- one FRAP target column
-
-Example:
+A CSV with `sample_id` and the FRAP measurement column.
 
 | sample_id | FRAP |
 |---|---:|
 | FormulationA(140,30) | 1.78 |
 | FormulationA(160,45) | 1.95 |
+
 ---
 
 ### 2. Extrusion Condition Optimizer
@@ -131,32 +161,21 @@ where $\hat{N}$ and $\hat{F}$ are min–max normalized NRF9.3 and predicted FRAP
 | Solver | Role |
 |---|---|
 | Differential Evolution | Primary global solver; gradient-free, population-based |
-| Dual Annealing (Simulated Annealing) | Primary global solver; less sensitive to initialization |
+| Dual Annealing | Primary global solver; less sensitive to initialization |
 | Grid search | Visualization and coarse benchmarking |
 | Local solvers (L-BFGS-B, Nelder-Mead) | Diagnostic — sensitivity to initialization |
 
 **Robustness:** Multiple random seeds; solutions verified by local refinement and neighborhood sensitivity analysis.
 
-### Expected input data for Optimization inputs
-
-Two long-format CSVs are expected:
+### Expected input data for Optimizer
 
 #### 1. FRAP prediction surface CSV
-Must contain columns representing:
 
-- formulation identifier
-- temperature
-- residence time
-- FRAP value
+Long-format CSV with columns for formulation identifier, temperature, residence time, and FRAP value. `sample_id` encodes temperature and time as `FormulationName(T,t)`.
 
 #### 2. NRF surface CSV
-Must contain columns representing:
 
-- formulation identifier
-- temperature
-- residence time
-- NRF value
-
+Long-format CSV with columns for formulation identifier, temperature, residence time, and NRF9.3 score.
 
 ---
 
@@ -166,11 +185,17 @@ Must contain columns representing:
 cereal-extrusion-framework/
 ├── README.md
 ├── requirements.txt
-├── models/
-│   ├── __init__.py
-│   ├── bioactivity_prediction.py   # BPM: Random Forest + bootstrap evaluation
-    └── optimization.py             # Global optimization of extrusion conditions
-
+├── data-pipeline/
+│   ├── n8n/
+│   │   └── GoogleDrive-Mistral-GeminiChat-GoogleSheets_v3.json  # n8n workflow (credentials redacted)
+│   └── prompts/
+│       ├── nutrient_extraction_prompts.md   # GPT-5.1 system prompt + field schema (supplier PDFs)
+│       └── bioactive_extraction_prompts.md  # GPT-5.2 prompts for literature bioactive extraction
+└── src/
+    └── models/
+        ├── __init__.py
+        ├── bioactivity_prediction.py   # BPM: Random Forest + bootstrap evaluation
+        └── optimization.py             # Global optimization of extrusion conditions
 ```
 
 ---
@@ -179,7 +204,7 @@ cereal-extrusion-framework/
 
 ```bash
 git clone https://github.com/tagkopouloslab/food-processing-extrusion-modeling.git
-cd Food-Processing-Extrusion-Modeling
+cd food-processing-extrusion-modeling
 pip install -r requirements.txt
 ```
 
@@ -190,7 +215,7 @@ pip install -r requirements.txt
 ### Bioactivity Prediction
 
 ```python
-from models.bioactivity_prediction import BioactivityPredictionModel
+from src.models.bioactivity_prediction import BioactivityPredictionModel
 
 bpm = BioactivityPredictionModel(
     composition_file="data/x_top_fp_chem_food_atDifferentTemp_df.csv",
@@ -205,10 +230,19 @@ bpm.plot_predicted_vs_actual(results)
 bpm.plot_feature_importance(results, top_n=20)
 ```
 
+Or from the command line:
+
+```bash
+python -m src.models.bioactivity_prediction \
+    --comp data/x_top_fp_chem_food_atDifferentTemp_df.csv \
+    --frap data/fp_LIT_frap_Values_matches.csv \
+    --n 100 --save figures/
+```
+
 ### Optimization
 
 ```python
-from models.optimization import ExtrusionOptimizer
+from src.models.optimization import ExtrusionOptimizer
 
 optimizer = ExtrusionOptimizer(
     bioactivity_file="data/fp_formulation_bioactivity_values_100_200C_0_120s.csv",
@@ -220,11 +254,23 @@ optimizer = ExtrusionOptimizer(
 result = optimizer.optimize(formulation="FP_Formulation_1", method="differential_evolution")
 print(result)
 
-# Compare all solvers
+# Compare all solvers for one formulation
 optimizer.compare_solvers(formulation="FP_Formulation_1")
+
+# Optimize all formulations and get summary table
+summary = optimizer.optimize_all(method="differential_evolution")
 
 # Visualize the objective landscape
 optimizer.plot_landscape(formulation="FP_Formulation_1")
+```
+
+Or from the command line:
+
+```bash
+python -m src.models.optimization \
+    --bio data/fp_formulation_bioactivity_values_100_200C_0_120s.csv \
+    --nrf data/fp_formulation_scores_weighted_opt_NRF_100_200C_0_120s.csv \
+    --form all --method differential_evolution --save figures/
 ```
 
 ---
@@ -234,10 +280,10 @@ optimizer.plot_landscape(formulation="FP_Formulation_1")
 If you use this code, please cite:
 
 ```bibtex
-@article{gupta2025cereal,
+@article{ni2025cereal,
   title={A computational framework connecting formulation, processing, nutrient density, and antioxidant capacity: a cereal extrusion study},
-  author={Gupta, Pranav and Ni, Keer and Zhou, Xu and Tagkopoulos, Ilias},
-  journal={},
+  author={Ni, Keer and Zhou, Xu and Gupta, Pranav and Tagkopoulos, Ilias},
+  journal={npj Science of Food},
   year={2025}
 }
 ```

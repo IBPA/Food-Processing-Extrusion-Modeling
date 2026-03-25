@@ -1,0 +1,970 @@
+{
+  "name": "GoogleDrive-Mistral-GeminiChat-GoogleSheets v3",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "triggerOn": "specificFolder",
+        "folderToWatch": {
+          "__rl": true,
+          "value": "YOUR_INPUT_FOLDER_ID",
+          "mode": "list",
+          "cachedResultName": "Nutrients - to be processed",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/YOUR_INPUT_FOLDER_ID"
+        },
+        "event": "fileCreated",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDriveTrigger",
+      "typeVersion": 1,
+      "position": [
+        2192,
+        800
+      ],
+      "id": "e4c2a801-8195-4d6c-ab0b-ec139d0d1b6b",
+      "name": "Google Drive Trigger",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "YOUR_GOOGLE_DRIVE_CREDENTIAL_ID",
+          "name": "Google Drive account"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "content": "### Step 1 - Get Document",
+        "height": 216,
+        "width": 572,
+        "color": 4
+      },
+      "id": "8e8ea9a6-2bf0-479b-9974-713e07509cfb",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        2624,
+        1072
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        2864,
+        1136
+      ],
+      "id": "d8d46fae-93ee-407d-ba52-c18aba951c06",
+      "name": "Download file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "YOUR_GOOGLE_DRIVE_CREDENTIAL_ID",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "8b9a937b-470e-4bc2-b292-9d4df1c3978e",
+              "leftValue": "={{ $json.mimeType }}",
+              "rightValue": "application/pdf",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2192,
+        576
+      ],
+      "id": "e7b183eb-d313-41de-891b-562a035532db",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.mistralAi",
+      "typeVersion": 1,
+      "position": [
+        3088,
+        1136
+      ],
+      "id": "c5f59152-e178-4fdf-99d4-3bad027c2b83",
+      "name": "Extract text1"
+    },
+    {
+      "parameters": {
+        "text": "={{ $json.extractedText }}",
+        "attributes": {
+          "attributes": [
+            {
+              "name": "ingredient_category",
+              "description": "Select from predefined categories (Corn flour, Wheat flour, Rice flour, Oat flour, Barley flour, Rye flour, Millet flour, Buckwheat flour, Sorghum flour, Peanut flour, Almond flour, Pea protein, Chickpea, Lentil, Mung bean, Pea flour, Brown rice flour, Rice protein, Pea fiber, Tomato powder, Garlic powder, Tapioca starch, Onion powder, Canola oil ,Sunflower oil, Palm oil, Strawberry powder, Apple powder). Do not create new categories.",
+              "required": true
+            },
+            {
+              "name": "supplier_id",
+              "description": "Supplier’s identifier or code used by file. Treat as text even if it looks numeric.",
+              "required": true
+            },
+            {
+              "name": "product_id",
+              "description": "For example, SKU number. The unique identifier assigned to the ingredient product in the file (e.g. Supplier Item ID, Product Code, etc.), usually a sequence of number or letters.",
+              "required": true
+            },
+            {
+              "name": "protein_value",
+              "type": "number",
+              "description": "Numeric amount of protein for the ingredient, without the unit. Omit this field if not found."
+            },
+            {
+              "name": "protein_unit",
+              "description": "Unit used to report protein amount, exactly as written in the text (for example: \"g\", \"mg\").",
+              "required": true
+            },
+            {
+              "name": "fiber_total_dietary_value",
+              "type": "number",
+              "description": "Numeric amount of total dietary fiber for the ingredient, without the unit. Omit this field if not found."
+            },
+            {
+              "name": "fiber_total_dietary_unit",
+              "description": "Unit used to report total dietary fiber, exactly as written in the text.",
+              "required": true
+            },
+            {
+              "name": "vitamin_a_rae_value",
+              "type": "number",
+              "description": "Numeric amount of Vitamin A (retinol activity equivalents, RAE) for the ingredient, without the unit. Omit this field if not found."
+            },
+            {
+              "name": "vitamin_a_rae_unit",
+              "description": "Unit used to report Vitamin A RAE, exactly as written in the text (for example: \"µg\", \"mcg\", \"IU\").",
+              "required": true
+            },
+            {
+              "name": "vitamin_c_value",
+              "type": "number",
+              "description": "Numeric amount of Vitamin C (total ascorbic acid) for the ingredient, without the unit. Omit this field if not found."
+            },
+            {
+              "name": "vitamin_c_unit",
+              "description": "Unit used to report Vitamin C, exactly as written in the text.",
+              "required": true
+            },
+            {
+              "name": "vitamin_e_value",
+              "type": "number",
+              "description": "Numeric amount of Vitamin E (alpha-tocopherol) for the ingredient, without the unit. Omit this field if not found."
+            },
+            {
+              "name": "vitamin_e_unit",
+              "description": "Unit used to report Vitamin E, exactly as written in the text.",
+              "required": true
+            },
+            {
+              "name": "calcium_value",
+              "type": "number",
+              "description": "Numeric amount of calcium for the ingredient, without the unit. Omit this field if not found."
+            },
+            {
+              "name": "calcium_unit",
+              "description": "Unit used to report calcium, exactly as written in the text.",
+              "required": true
+            },
+            {
+              "name": "iron_value",
+              "type": "number",
+              "description": "Numeric amount of iron for the ingredient, without the unit. Omit this field if not found."
+            },
+            {
+              "name": "iron_unit",
+              "description": "Unit used to report iron, exactly as written in the text.",
+              "required": true
+            },
+            {
+              "name": "magnesium_value",
+              "type": "number",
+              "description": "Numeric amount of magnesium for the ingredient, without the unit. Omit this field if not found."
+            },
+            {
+              "name": "magnesium_unit",
+              "description": "Unit used to report magnesium, exactly as written in the text.",
+              "required": true
+            },
+            {
+              "name": "potassium_value",
+              "type": "number",
+              "description": "Numeric amount of potassium for the ingredient, without the unit. Omit this field if not found."
+            },
+            {
+              "name": "potassium_unit",
+              "description": "Unit used to report potassium, exactly as written in the text.",
+              "required": true
+            },
+            {
+              "name": "saturated_fatty_acids_value",
+              "type": "number",
+              "description": "Numeric amount of total saturated fatty acids for the ingredient, without the unit. Omit this field if not found."
+            },
+            {
+              "name": "saturated_fatty_acids_unit",
+              "description": "Unit used to report total saturated fatty acids, exactly as written in the text.",
+              "required": true
+            },
+            {
+              "name": "sugars_added_value",
+              "type": "number",
+              "description": "Numeric amount of added sugars for the ingredient, without the unit. Omit this field if not found."
+            },
+            {
+              "name": "sugars_added_unit",
+              "description": "Unit used to report added sugars, exactly as written in the text.",
+              "required": true
+            },
+            {
+              "name": "sodium_value",
+              "type": "number",
+              "description": "Numeric amount of sodium for the ingredient, without the unit. Omit this field if not found."
+            },
+            {
+              "name": "sodium_unit",
+              "description": "Unit used to report sodium, exactly as written in the text.",
+              "required": true
+            },
+            {
+              "name": "energy_combined_value",
+              "type": "number",
+              "description": "Numeric amount of total energy (caloric value) for the ingredient, without the unit. Omit this field if not found."
+            },
+            {
+              "name": "energy_combined_unit",
+              "description": "Unit used to report energy, exactly as written in the text (for example: \"kcal\", \"cal\").",
+              "required": true
+            },
+            {
+              "name": "product_name",
+              "description": "Full product name as listed in the file (e.g., “Organic Whole Wheat Flour”).",
+              "required": true
+            },
+            {
+              "name": "supplier_name",
+              "description": "Name of the supplier providing the ingredient, as shown in the document. Extract as written in the Nutrition PDF.",
+              "required": true
+            },
+            {
+              "name": "description",
+              "description": "Descriptive text about the product, such as composition, usage, or other notes, as written in the document.",
+              "required": true
+            },
+            {
+              "name": "location",
+              "description": "Location related to the product or supplier (e.g., manufacturing site, warehouse, city, or country) as stated in the document.",
+              "required": true
+            }
+          ]
+        },
+        "options": {
+          "systemPromptTemplate": "You are an expert extraction algorithm. You are also an expert in nutrition, so you understand synonyms of them (e.g. fiber, dietary fiber, crude fiber could be considered as the same thing). \nOnly extract relevant information from the text.\nIf you do not know the value of an attribute asked to extract, you may omit the attribute's value. Never put 0 unless it is being provided in the text.\nIMPORTANT: Return ONLY valid JSON without any markdown formatting, code blocks, or backticks. Do not wrap the JSON in ```json or ``` tags."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.informationExtractor",
+      "typeVersion": 1.2,
+      "position": [
+        3312,
+        1136
+      ],
+      "id": "72913262-b7b6-4a9d-9db1-4f34b88c66ee",
+      "name": "Information Extractor1"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        3312,
+        1360
+      ],
+      "id": "12df035d-204b-4cfa-8dd4-76e5398e3554",
+      "name": "Google Gemini Chat Model1"
+    },
+    {
+      "parameters": {
+        "content": "### Step 2 - Extract Details",
+        "height": 344,
+        "width": 556,
+        "color": 5
+      },
+      "id": "618c0263-9759-4142-af21-6a3538a502d2",
+      "name": "Sticky Note1",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        3152,
+        1152
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "operation": "move",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $('Download file').item.json.id }}",
+          "mode": "id"
+        },
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "YOUR_OUTPUT_FOLDER_ID",
+          "mode": "list",
+          "cachedResultName": "Nutrients - processed (Palm oil)",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/YOUR_OUTPUT_FOLDER_ID"
+        }
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        3888,
+        1136
+      ],
+      "id": "09126837-9701-4936-bedf-08bef9a9f626",
+      "name": "Move file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "YOUR_GOOGLE_DRIVE_CREDENTIAL_ID",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "newUpdatedFileName": "={{ $('Information Extractor1').item.json.output.ingredient_category }} - {{ $('Information Extractor1').item.json.output.product_id }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        4112,
+        1136
+      ],
+      "id": "cadec72c-a2c0-42f7-99b7-50933396cb35",
+      "name": "Update file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "YOUR_GOOGLE_DRIVE_CREDENTIAL_ID",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "### Step 3 - Store Invoice",
+        "height": 216,
+        "width": 508,
+        "color": 6
+      },
+      "id": "9e3be2f6-b8aa-48b5-a609-13e6099f5959",
+      "name": "Sticky Note2",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        3680,
+        1072
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_SHEET_ID",
+          "mode": "list",
+          "cachedResultName": "TraceGains_28Ingredients_Nutrients",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEET_ID/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "YOUR_SHEET_TAB_ID",
+          "mode": "list",
+          "cachedResultName": "Data-PalmOil",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEET_ID/edit#gid=YOUR_SHEET_TAB_ID"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Ingredient Category": "={{ $('Information Extractor1').item.json.output.ingredient_category }}",
+            "Product ID": "={{ $('Information Extractor1').item.json.output.product_id }}",
+            "File Name": "={{ $json.name }} ",
+            "File URL": "=https://drive.google.com/file/d/{{ $json.id }}/view",
+            "Product Name": "={{ $('Information Extractor1').item.json.output.product_name }}",
+            "Supplier Name": "={{ $('Information Extractor1').item.json.output.supplier_name }}",
+            "Supplier ID": "={{ $('Information Extractor1').item.json.output.supplier_id }}",
+            "Description": "={{ $('Information Extractor1').item.json.output.description }}",
+            "Location": "={{ $('Information Extractor1').item.json.output.location }}",
+            "Protein (g)": "={{ $('Handle Zero vs Empty Values').item.json.output.protein_value }}",
+            "Fiber, total dietary (g)": "={{ $('Handle Zero vs Empty Values').item.json.output.fiber_total_dietary_value }}",
+            "Calcium (mg)": "={{ $('Handle Zero vs Empty Values').item.json.output.calcium_value }}",
+            "Iron (mg)": "={{ $('Handle Zero vs Empty Values').item.json.output.iron_value }}",
+            "Potassium (mg)": "={{ $('Handle Zero vs Empty Values').item.json.output.potassium_value }}",
+            "Saturated Fatty Scids (g)": "={{ $('Handle Zero vs Empty Values').item.json.output.saturated_fatty_acids_value }}",
+            "Added Sugars (g)": "={{ $('Handle Zero vs Empty Values').item.json.output.sugars_added_value }}",
+            "Energy (kcal)": "={{ $('Handle Zero vs Empty Values').item.json.output.energy_combined_value }}",
+            "Sodium (mg)": "={{ $('Handle Zero vs Empty Values').item.json.output.sodium_value }}",
+            "Vitamin A (IU; mcg RAE)": "={{ $('Handle Zero vs Empty Values').item.json.output.vitamin_a_rae_value }}",
+            "Vitamin C (mg)": "={{ $('Handle Zero vs Empty Values').item.json.output.vitamin_c_value }}",
+            "Vitamin E (mg)": "={{ $('Handle Zero vs Empty Values').item.json.output.vitamin_e_value }}",
+            "Magnesium (mg)": "={{ $('Handle Zero vs Empty Values').item.json.output.magnesium_value }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Ingredient Category",
+              "displayName": "Ingredient Category",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Product Name",
+              "displayName": "Product Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Supplier Name",
+              "displayName": "Supplier Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Supplier ID",
+              "displayName": "Supplier ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Product ID",
+              "displayName": "Product ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Protein (g)",
+              "displayName": "Protein (g)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Fiber, total dietary (g)",
+              "displayName": "Fiber, total dietary (g)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Vitamin A (IU; mcg RAE)",
+              "displayName": "Vitamin A (IU; mcg RAE)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Vitamin C (mg)",
+              "displayName": "Vitamin C (mg)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Vitamin E (mg)",
+              "displayName": "Vitamin E (mg)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Calcium (mg)",
+              "displayName": "Calcium (mg)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Iron (mg)",
+              "displayName": "Iron (mg)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Magnesium (mg)",
+              "displayName": "Magnesium (mg)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Potassium (mg)",
+              "displayName": "Potassium (mg)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Saturated Fatty Scids (g)",
+              "displayName": "Saturated Fatty Scids (g)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Added Sugars (g)",
+              "displayName": "Added Sugars (g)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Sodium (mg)",
+              "displayName": "Sodium (mg)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Energy (kcal)",
+              "displayName": "Energy (kcal)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "File Name",
+              "displayName": "File Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "File URL",
+              "displayName": "File URL",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Description",
+              "displayName": "Description",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Location",
+              "displayName": "Location",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        4336,
+        1136
+      ],
+      "id": "e7d3d58d-0bf9-4f5c-9a86-feab71d60a0b",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "YOUR_GOOGLE_SHEETS_CREDENTIAL_ID",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "id",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        2640,
+        1136
+      ],
+      "id": "c9b38eae-4117-4da9-9a9f-7a5f6b13cbcc",
+      "name": "Split Out"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 2
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        2192,
+        1136
+      ],
+      "id": "0858b36e-8368-4a09-8199-eaf24647af29",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "resource": "fileFolder",
+        "limit": 3,
+        "filter": {
+          "folderId": {
+            "__rl": true,
+            "value": "YOUR_INPUT_FOLDER_ID",
+            "mode": "list",
+            "cachedResultName": "Nutrients - to be processed",
+            "cachedResultUrl": "https://drive.google.com/drive/folders/YOUR_INPUT_FOLDER_ID"
+          }
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        2416,
+        1136
+      ],
+      "id": "951fd730-87cd-436a-9605-c5d3e9aae66f",
+      "name": "Search files and folders"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Get the output object from Information Extractor\nconst output = $input.item.json.output;\n\n// Create a new object with all fields\nconst processedOutput = { ...output };\n\n// List of numeric value fields to check\nconst numericFields = [\n  'protein_value',\n  'fiber_total_dietary_value',\n  'vitamin_a_rae_value',\n  'vitamin_c_value',\n  'vitamin_e_value',\n  'calcium_value',\n  'iron_value',\n  'magnesium_value',\n  'potassium_value',\n  'saturated_fatty_acids_value',\n  'sugars_added_value',\n  'sodium_value',\n  'energy_combined_value'\n];\n\n// For each numeric field, convert null/undefined to empty string while preserving 0\nfor (const field of numericFields) {\n  if (processedOutput[field] === null || processedOutput[field] === undefined) {\n    processedOutput[field] = '';\n  }\n  // If it's 0, keep it as 0 (no change needed)\n}\n\n// Return the modified output object with all original fields preserved\nreturn {\n  json: {\n    ...($input.item.json),\n    output: processedOutput\n  }\n};"
+      },
+      "id": "367c0f3d-cdcb-4900-9ccf-868a261c985e",
+      "name": "Handle Zero vs Empty Values",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3664,
+        1136
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "predefinedCredentialType",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        4368,
+        960
+      ],
+      "id": "1c152eb9-75ff-485a-8e99-c1aad781f948",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        1584,
+        688
+      ],
+      "id": "78119aee-9608-407c-9c4c-846c9bc0d490",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "YOUR_OPENAI_CREDENTIAL_ID",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-5.1",
+          "mode": "list",
+          "cachedResultName": "gpt-5.1"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        3488,
+        1360
+      ],
+      "id": "82e927d3-f456-4eb3-a6d5-f4aaaf3e3f2c",
+      "name": "OpenAI Chat Model1",
+      "credentials": {
+        "openAiApi": {
+          "id": "YOUR_OPENAI_CREDENTIAL_ID",
+          "name": "OpenAi account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Download file": {
+      "main": [
+        [
+          {
+            "node": "Extract text1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract text1": {
+      "main": [
+        [
+          {
+            "node": "Information Extractor1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model1": {
+      "ai_languageModel": [
+        []
+      ]
+    },
+    "Move file": {
+      "main": [
+        [
+          {
+            "node": "Update file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update file": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "Download file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Search files and folders",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search files and folders": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Information Extractor1": {
+      "main": [
+        [
+          {
+            "node": "Handle Zero vs Empty Values",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Handle Zero vs Empty Values": {
+      "main": [
+        [
+          {
+            "node": "Move file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Information Extractor1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "c624fe83-e0fb-4883-b6c6-e82b9aef5d86",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "YOUR_N8N_INSTANCE_ID"
+  },
+  "id": "YOUR_WORKFLOW_ID",
+  "tags": []
+}
