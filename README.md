@@ -2,6 +2,9 @@
 
 **A computational framework connecting formulation, processing, nutrient density, and antioxidant capacity: a cereal extrusion study**
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.XXXXXXX.svg)](https://doi.org/10.5281/zenodo.XXXXXXX)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 Keer Ni¹²†, Xu Zhou¹²†, Pranav Gupta¹², & Ilias Tagkopoulos¹²
 
 †These authors contributed equally to this work
@@ -277,14 +280,30 @@ python -m src.models.optimization \
 
 ## Citation
 
-If you use this code, please cite:
+If you use this code, please cite the paper and the software archive:
+
+**Paper:**
 
 ```bibtex
 @article{ni2025cereal,
   title={A computational framework connecting formulation, processing, nutrient density, and antioxidant capacity: a cereal extrusion study},
   author={Ni, Keer and Zhou, Xu and Gupta, Pranav and Tagkopoulos, Ilias},
   journal={npj Science of Food},
-  year={2025}
+  year={2025},
+  doi={PLACEHOLDER}
+}
+```
+
+**Software archive (Zenodo):**
+
+```bibtex
+@software{ni2025cereal_code,
+  author={Ni, Keer and Zhou, Xu and Gupta, Pranav and Tagkopoulos, Ilias},
+  title={Computational Framework for Cereal Extrusion Optimization},
+  year={2025},
+  publisher={Zenodo},
+  doi={10.5281/zenodo.XXXXXXX},
+  url={https://doi.org/10.5281/zenodo.XXXXXXX}
 }
 ```
 

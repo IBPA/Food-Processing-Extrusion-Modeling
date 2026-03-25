@@ -1,0 +1,54 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+type: software
+title: "Computational Framework for Cereal Extrusion Optimization"
+abstract: >
+  A computational framework integrating LLM-assisted data collection pipelines,
+  mechanistic kinetic models, a Random Forest bioactivity predictor, and global
+  optimization to identify extrusion conditions that maximize nutrient density
+  (NRF9.3) and antioxidant capacity (FRAP) for breakfast cereal formulations.
+authors:
+  - family-names: "Ni"
+    given-names: "Keer"
+    affiliation: "Department of Computer Science & Genome Center, University of California, Davis"
+    orcid: "https://orcid.org/XXXX-XXXX-XXXX-XXXX"
+  - family-names: "Zhou"
+    given-names: "Xu"
+    affiliation: "Department of Computer Science & Genome Center, University of California, Davis"
+    orcid: "https://orcid.org/XXXX-XXXX-XXXX-XXXX"
+  - family-names: "Gupta"
+    given-names: "Pranav"
+    affiliation: "Department of Computer Science & Genome Center, University of California, Davis"
+    orcid: "https://orcid.org/XXXX-XXXX-XXXX-XXXX"
+  - family-names: "Tagkopoulos"
+    given-names: "Ilias"
+    affiliation: "Department of Computer Science & Genome Center, University of California, Davis"
+    orcid: "https://orcid.org/XXXX-XXXX-XXXX-XXXX"
+version: "1.0.0"
+date-released: "2025-01-01"
+license: MIT
+repository-code: "https://github.com/tagkopouloslab/food-processing-extrusion-modeling"
+keywords:
+  - cereal extrusion
+  - food processing
+  - nutrient density
+  - antioxidant capacity
+  - machine learning
+  - random forest
+  - optimization
+  - differential evolution
+preferred-citation:
+  type: article
+  title: "A computational framework connecting formulation, processing, nutrient density, and antioxidant capacity: a cereal extrusion study"
+  authors:
+    - family-names: "Ni"
+      given-names: "Keer"
+    - family-names: "Zhou"
+      given-names: "Xu"
+    - family-names: "Gupta"
+      given-names: "Pranav"
+    - family-names: "Tagkopoulos"
+      given-names: "Ilias"
+  journal: "npj Science of Food"
+  year: 2025
+  doi: "PLACEHOLDER — update once assigned"
